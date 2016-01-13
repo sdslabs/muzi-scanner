@@ -77,13 +77,25 @@ class Utils:
         session.commit()
         session.close()
 
+    def check_if_album_thumbnail_exists(self, variables):
+        return str(variables.album_id) in \
+               [img.strip('.png') for img in os.listdir(variables.dirs.albums_thumbnail)]
+
+    def check_if_artist_thumbnail_exists(self, variables):
+        return str(variables.band_id) in \
+               [img.strip('.png') for img in os.listdir(variables.dirs.artist_thumbnail)]
+
+    def check_if_artist_cover_exists(self, variables):
+        return str(variables.band_id) in \
+               [img.strip('.jpg') for img in os.listdir(variables.dirs.artists_cover)]
+
 
 class Dirs:
-    def __init__(self, sys_param):
-        artists = sys_param.argv[1]
-        artists_cover = sys_param.argv[2]
-        albums_thumbnail = sys_param.argv[3]
-        artist_thumbnail = sys_param.argv[4]
+    def __init__(self, arguments):
+        artists = arguments.artists_dir
+        artists_cover = arguments.artist_cover_dir
+        albums_thumbnail = arguments.album_thumbnail_dir
+        artist_thumbnail = arguments.artist_thumbnail_dir
 
         # Convert the path to absolute path
         self.artists = os.path.abspath(artists)
@@ -97,10 +109,12 @@ class Dirs:
 
 
 class Variables:
-    def __init__(self, sys_param, session, network):
-        self.dirs = Dirs(sys_param)
+    def __init__(self, arguments, session, network):
+        self.dirs = Dirs(arguments)
+        self.arguments = arguments
         self.session = session
         self.network = network
+        self.track_data = {'year':2000,'track_number':'0','track_duration':240,'genre':'unknown'}
 
     def add_band(self, band_name, is_new, band_id = None):
         self.band_id = band_id
@@ -111,5 +125,13 @@ class Variables:
         self.album_id = album_id
         self.is_album_new = is_new
         self.album_name = album_name
+
+    def store_track_data(self, keys, values):
+        for key,value in zip(keys,values):
+            if (value is None and not self.track_data.has_key(key)) or (value is not None):
+                self.track_data[key] = value
+
+    def reset_track_data(self):
+        self.track_data = {'year':2000,'track_number':'0','track_duration':240,'genre':'unknown'}
 
 utils = Utils()
