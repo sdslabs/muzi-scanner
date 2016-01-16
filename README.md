@@ -23,8 +23,6 @@ Specified in [requirements.txt]
 $ pip install -r requirements.txt
 ```
 
-## Usage
-
 Create a data.json file in the project root. It should look something like below:
 
 ```json
@@ -42,7 +40,10 @@ Create a data.json file in the project root. It should look something like below
     }
 }
 ```
-After specifying the necessary credentials, run the below command to create database
+## Usage
+
+#Note:
+The below command is for development purpose only
 
 ```sh
 $ python createdb.py
@@ -50,19 +51,14 @@ $ python createdb.py
 
 Scanner Usage Examples
 ```sh
-$ python scan.py -a PATH/to/songs/root/ -atc ~/artist_cover_image_directory/ -abt ~/albums_thumb_image_directory/ -att ~/artist_thumbnail_directory/
+$ python scan.py PATH/to/songs/root/ ~/artist_cover_image_directory/ ~/artist_thumbnail_directory/ ~/albums_thumb_image_directory/
 ```
 To fix missing images use the option ```--fix-missing```
 
 ```sh
-$ python scan.py --fix-missing -a PATH/to/songs/root/ -atc ~/artist_cover_image_directory/ -abt ~/albums_thumb_image_directory/ -att ~/artist_thumbnail_directory/
+$ python fixmissing.py ~/artist_cover_image_directory/ ~/artist_thumbnail_directory/ ~/albums_thumb_image_directory/
 ```
 
-Scanner Usage Help:
-
-```sh
-$ python scan.py -h
-```
 
 [//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does it's job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
 
