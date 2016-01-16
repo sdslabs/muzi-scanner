@@ -80,7 +80,7 @@ class Pics:
                 url = instance.find('zune:url', ns).text
                 break
             if not url:
-                print '[-] ' + str(variables.band_name) + "'s cover not found"
+                print "[-] %s's cover not found"%(variables.band_name)
                 return
             utils.save_image(url, artist_cover_path)
             print '[+] Added ' + variables.band_name + ' cover'
