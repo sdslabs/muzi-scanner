@@ -92,10 +92,10 @@ class Utils:
 
 class Dirs:
     def __init__(self, arguments):
-        artists = arguments.artists_dir
-        artists_cover = arguments.artist_cover_dir
-        albums_thumbnail = arguments.album_thumbnail_dir
-        artist_thumbnail = arguments.artist_thumbnail_dir
+        artists = arguments['artists_dir']
+        artists_cover = arguments['artist_cover_dir']
+        albums_thumbnail = arguments['album_thumbnail_dir']
+        artist_thumbnail = arguments['artist_thumbnail_dir']
 
         # Convert the path to absolute path
         self.artists = os.path.abspath(artists)
@@ -128,7 +128,23 @@ class Variables:
 
     def store_track_data(self, keys, values):
         for key,value in zip(keys,values):
-            if (value is None and not self.track_data.has_key(key)) or (value is not None):
+            # This case is when value from lastfm is None, we don't want to put that in
+            # track_data dictionary
+            if (key is "band_name" and self.band_name is not None and value is None) or\
+                (key is "album_name" and self.album_name is not None and value is None):
+                self.track_data[key] = getattr(self, key)
+            # This case is when a different album/band song is inside the same album directory
+            elif (key is "album_name" and self.album_name != value) or\
+                    (key is "band_name" and self.band_name != value):
+                self.track_data[key] = value
+                if key is "album_name":
+                    self.is_album_new = True
+                elif key is "band_name":
+                    self.is_band_new = True
+
+            elif (value is None and not self.track_data.has_key(key)) or\
+                    (value is not None and self.track_data.has_key(key) and
+                             self.track_data[key] != value) or (value is not None):
                 self.track_data[key] = value
 
     def reset_track_data(self):

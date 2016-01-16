@@ -1,6 +1,5 @@
 import os
 import sys
-import argparse
 import pylast
 import glob
 import credentials
@@ -165,7 +164,7 @@ class Scanner:
                                    length = variables.track_data['track_duration'],
                                    track = variables.track_data['track_number'])
         session.close()
-        print '[+] %s - %s (%s) added' % (variables.band_name,
+        print '[+] %s - %s (%s) added' % (variables.track_data['band_name'],
                                           variables.track_data['song_title'],
                                           variables.album_name)
 
@@ -195,7 +194,7 @@ class Scanner:
         track_duration = self.get_track_duration_from_lastfm(variables)
         track_genre = self.get_track_genre_from_lastfm(variables)
 
-        keys = ['track_duration','track_genre']
+        keys = ['track_duration','genre']
         values = [track_duration,track_genre]
 
         variables.store_track_data(keys, values)
@@ -262,8 +261,7 @@ class Scanner:
         try:
             song_title = audio_file['title'][0]
         except:
-            #TODO: Fall back to filename of the song
-            return None
+            song_title = audio_file.filename[audio_file.filename.rindex('/')+1:-4]
         return song_title
 
     def get_band_name_from_tag(self, audio_file):
@@ -312,7 +310,7 @@ class Scanner:
             audio_file = file_handler(audio_file_path)
         except Exception as e:
             print e.message
-            print "File at %s can't be recognised"%audio_file_path
+            print "File at %s can't be recognised:"%audio_file_path
             return "yes"
 
         song_title = self.get_song_title_from_tag(audio_file)
@@ -342,10 +340,10 @@ class Scanner:
 
         # Assuming that all songs are of mp3 or m4a or mp4 format
         glob_parameters = [os.path.join(album_dir,ext) for ext in ['*.mp3','*.m4a','*.mp4']]
-
         # Songs_path will contain the absolute path to every mp3 file in album_directory
         # reference: http://www.diveintopython.net/file_handling/os_module.html
         songs_path = []
+
         for glob_parameter in glob_parameters:
             songs_path.extend(glob.glob(glob_parameter))
 
@@ -358,40 +356,23 @@ class Scanner:
         new, band_id = utils.check_if_band_exists(variables, artist)
         new = not new
         variables.add_band(artist, new, band_id)
+        album_dirs = []
 
-        for album in os.listdir(artist_dir):
-            # If its not a directory then skip that case
-            if not os.path.isdir(os.path.join(artist_dir,album)):
+        for dirpath,dirnames,filenames in os.walk(artist_dir):
+            if '.DAV' in dirpath:
                 continue
+            for filename in filenames:
+                if filename[-3:] in ['mp3','mp4','m4a']:
+                    album_dirs.append(dirpath)
+                    break
+
+        for album_dir in album_dirs:
+            # If its not a directory then skip that case
+            if not os.path.isdir(album_dir):
+                continue
+            artist_dir, album = os.path.split(album_dir)
             print '[+] Adding ' + album
             self.add_album(variables, artist_dir, album)
-
-    def download_missing_images(self, variables):
-        artists_cover = variables.dirs.artists_cover
-        artist_thumbnail = variables.dirs.artist_thumbnail
-        albums_thumbnail = variables.dirs.albums_thumbnail
-
-        downloader = [pics.get_band_cover, pics.get_band_thumbnail, pics.get_album_thumbnail]
-
-        iterable_list = [(Band, artists_cover), (Band, artist_thumbnail), (Album, albums_thumbnail)]
-
-        for index, (model, directory) in enumerate(iterable_list):
-            # Find all model ids which are already downloaded
-            model_ids_with_image = [img.strip('.jpg') for img in os.listdir(directory)]
-            # Find the contra model set for the above list
-            models_without_image = variables.session().query(model).filter\
-                                             (~model.id.in_(model_ids_with_image)).all()
-
-            for model in models_without_image:
-                if model.__class__ is Band:
-                    variables.add_band(model.name, False, model.id)
-                    variables.add_album(None, False, None)
-                elif model.__class__ is Album:
-                    # Both album, band variables are required to download album related images
-                    variables.add_band(model.band_name, False, model.band_id)
-                    variables.add_album(model.name, False, model.id)
-                downloader[index](variables)
-
 
 
     def __init__(self, arguments):
@@ -428,37 +409,16 @@ class Scanner:
                                        api_secret=API_SECRET,)
 
         variables = Variables(arguments, Session, network)
-        if arguments.fix_missing:
-            self.download_missing_images(variables)
-        else:
-            #TODO: evaluate listdir for artists_dir lazily
-            for artist in os.listdir(variables.dirs.artists):
-                print '[+]>>>> Adding ' + artist
-                self.add_band(variables, artist)
+
+        #TODO: evaluate listdir for artists_dir lazily
+        for artist in os.listdir(variables.dirs.artists):
+            print '[+]>>>> Adding ' + artist
+            self.add_band(variables, artist)
 
 if __name__ == '__main__':
-    # ArgParse reference: https://pymotw.com/2/argparse/
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--fix-missing',
-                      action="store_true",
-                      help='Use this option to download missing artist/album covers/thumnails',
-                      default=False)
-    parser.add_argument('-a',
-                        '--artists-dir',
-                        required=True,
-                        help="Artists' directory")
-    parser.add_argument('-atc',
-                        '--artist-cover-dir',
-                        required=True,
-                        help="Directory to store Artist Cover images")
-    parser.add_argument('-abt',
-                        '--album-thumbnail-dir',
-                        required=True,
-                        help="Directory to store Album thumbnails")
-    parser.add_argument('-att',
-                        '--artist-thumbnail-dir',
-                        required=True,
-                        help="Directory to store Artist thumbnails")
-    arguments = parser.parse_args()
+
+    arguments = {'artists_dir': sys.argv[1], 'artist_cover_dir': sys.argv[2],
+                 'artist_thumbnail_dir': sys.argv[3], 'album_thumbnail_dir': sys.argv[4]}
+
     # Run
     Scanner(arguments)
