@@ -168,6 +168,8 @@ class Scanner:
                                           variables.track_data['song_title'],
                                           variables.album_name)
 
+        self.update_tag_data(variables, audio_file_path)
+
     def get_corrected_song_title(self, track_object):
         try:
             song_title = track_object.get_correction()
@@ -296,6 +298,13 @@ class Scanner:
             track_number = '0'
         return track_number
 
+    def get_album_name_from_tag(self, audio_file):
+        try:
+            album_name = audio_file['album'][0]
+        except:
+            return None
+        return album_name
+
     def get_tag_data(self, variables, audio_file_path):
 
         file_type = 'mp3' if '.mp3' in audio_file_path else 'm4a'
@@ -317,6 +326,8 @@ class Scanner:
 
         band_name = self.get_band_name_from_tag(audio_file)
 
+        album_name = self.get_album_name_from_tag(audio_file)
+
         year = self.get_year_from_tag(audio_file)
 
         genre = self.get_genre_from_tag(audio_file)
@@ -325,10 +336,111 @@ class Scanner:
 
         track_number = self.get_track_number_from_tag(audio_file)
 
-        keys = ['song_title','band_name','year','genre','track_duration','track_number']
-        values = [song_title, band_name, year, genre, track_duration, track_number]
+        keys = ['song_title','band_name','album_name','year','genre','track_duration',
+                'track_number']
+
+        values = [song_title, band_name, album_name, year, genre, track_duration,
+                  track_number]
 
         variables.store_track_data(keys,values)
+        variables.store_tag_data(keys,values)
+
+    def update_tag_data(self, variables, audio_file_path):
+
+        file_type = 'mp3' if '.mp3' in audio_file_path else 'm4a'
+
+        # Get the title,artist from id3 tags
+        if file_type is 'mp3':
+            file_handler = mp3.EasyMP3
+        elif file_type is 'm4a':
+            file_handler = easymp4.EasyMP4
+
+        try:
+            audio_file = file_handler(audio_file_path)
+        except Exception as e:
+            print e.message
+            print "File at %s can't be recognised:"%audio_file_path
+            return "yes"
+
+        self.correct_title_tag(audio_file, variables)
+        self.correct_artist_tag(audio_file, variables)
+        self.correct_album_tag(audio_file, variables)
+        self.correct_date_tag(audio_file, variables)
+        self.correct_genre_tag(audio_file, variables)
+        self.correct_length_tag(audio_file, variables)
+        self.correct_track_number_tag(audio_file, variables)
+
+        audio_file.save()
+
+    def correct_title_tag(self, audio_file, variables):
+        try:
+            old_tag = audio_file['title'][0]
+        except:
+            audio_file['title'] = [variables.track_data['song_title']]
+            return
+
+        if old_tag != variables.track_data['song_title']:
+            audio_file['title'] = [variables.track_data['song_title']]
+
+    def correct_artist_tag(self, audio_file, variables):
+        try:
+            old_tag = audio_file['artist'][0]
+        except:
+            audio_file['artist'] = [variables.track_data['band_name']]
+            return
+
+        if old_tag != variables.track_data['band_name']:
+            audio_file['artist'] = [variables.track_data['band_name']]
+
+    def correct_date_tag(self, audio_file, variables):
+        try:
+            old_tag = int(audio_file['date'][0][:4])
+        except:
+            audio_file['date'][0] = [variables.track_data['year']]
+            return
+
+        if old_tag != int(variables.track_data['year']):
+            audio_file['date'] = [variables.track_data['year']]
+
+    def correct_length_tag(self, audio_file, variables):
+        try:
+            old_tag = int(audio_file.info.length)
+        except:
+            audio_file.info.length = variables.track_data['track_duration']
+            return
+
+        if old_tag != variables.track_data['track_duration']:
+            audio_file.info.length = variables.track_data['track_duration']
+
+    def correct_album_tag(self, audio_file, variables):
+        try:
+            old_tag = audio_file['album'][0]
+        except:
+            audio_file['album'] = [variables.track_data['album_name']]
+            return
+
+        if old_tag != variables.track_data['album_name']:
+            audio_file['album'] = [variables.track_data['album_name']]
+
+    def correct_genre_tag(self, audio_file, variables):
+        try:
+            old_tag = audio_file['genre'][0]
+        except:
+            audio_file['genre'] = variables.track_data['genre']
+            return
+
+        if old_tag != variables.track_data['genre']:
+            audio_file['genre'] = variables.track_data['genre']
+
+    def correct_track_number_tag(self, audio_file, variables):
+        try:
+            old_tag = int(audio_file['tracknumber'][0].split('/')[0])
+        except:
+            audio_file['track_number'] = variables.track_data['track_number']
+            return
+
+        if old_tag != int(variables.track_data['track_number']):
+            audio_file['track_number'] = variables.track_data['track_number']
 
 
     def add_album(self, variables, artist_dir, album):

@@ -115,6 +115,8 @@ class Variables:
         self.session = session
         self.network = network
         self.track_data = {'year':2000,'track_number':'0','track_duration':240,'genre':'unknown'}
+        self.tag_data = {'song_title':None,'band_name':None,'album':None,'year':None,'track_duration':None,
+                         'track_number':None,'genre':None}
 
     def add_band(self, band_name, is_new, band_id = None):
         self.band_id = band_id
@@ -146,6 +148,11 @@ class Variables:
                     (value is not None and self.track_data.has_key(key) and
                              self.track_data[key] != value) or (value is not None):
                 self.track_data[key] = value
+
+    def store_tag_data(self, keys, values):
+        for key,value in zip(keys,values):
+            if (value is not None):
+                self.tag_data[key] = value
 
     def reset_track_data(self):
         self.track_data = {'year':2000,'track_number':'0','track_duration':240,'genre':'unknown'}
