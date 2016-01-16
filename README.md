@@ -42,7 +42,7 @@ Create a data.json file in the project root. It should look something like below
 ```
 ## Usage
 
-#Note:
+###Note:
 The below command is for development purpose only
 
 ```sh
