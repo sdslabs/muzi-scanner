@@ -102,17 +102,6 @@ class Scanner:
             else:
                 print '[-]pylast Exception:'+str(e)
 
-        except AttributeError as e:
-            # AttributeError here occurs when track_object was retrieved
-            # but the album name could not be retrieved
-            # Nothing to worry, this has been taken care of.
-            pass
-        except IndexError as e:
-            # This occurs when track_object.get_top_tags(limit=1)[0].item.name fails
-            # Has been taken care of
-            if str(e) == 'list index out of range':
-                pass
-
         except Exception as e:
             # This block is to be looked upon to add exception handling cases
             print '[-]Unkown Exception while fetching track attributes:'+str(e)
@@ -164,9 +153,11 @@ class Scanner:
                                    length = variables.track_data['track_duration'],
                                    track = variables.track_data['track_number'])
         session.close()
+        album_name = variables.track_data['album_name']\
+            if variables.track_data.has_key('album_name') else variables.album_name
         print '[+] %s - %s (%s) added' % (variables.track_data['band_name'],
                                           variables.track_data['song_title'],
-                                          variables.album_name)
+                                          album_name)
 
         self.update_tag_data(variables, audio_file_path)
 
@@ -342,8 +333,9 @@ class Scanner:
         values = [song_title, band_name, album_name, year, genre, track_duration,
                   track_number]
 
-        variables.store_track_data(keys,values)
+        #Tag data has to be stored first to prevent unnecessary exceptions
         variables.store_tag_data(keys,values)
+        variables.store_track_data(keys,values)
 
     def update_tag_data(self, variables, audio_file_path):
 
@@ -396,11 +388,11 @@ class Scanner:
         try:
             old_tag = int(audio_file['date'][0][:4])
         except:
-            audio_file['date'][0] = [variables.track_data['year']]
+            audio_file['date'] = [str(variables.track_data['year'])]
             return
 
         if old_tag != int(variables.track_data['year']):
-            audio_file['date'] = [variables.track_data['year']]
+            audio_file['date'] = [str(variables.track_data['year'])]
 
     def correct_length_tag(self, audio_file, variables):
         try:
@@ -436,11 +428,11 @@ class Scanner:
         try:
             old_tag = int(audio_file['tracknumber'][0].split('/')[0])
         except:
-            audio_file['track_number'] = variables.track_data['track_number']
+            audio_file['tracknumber'] = variables.track_data['track_number']
             return
 
         if old_tag != int(variables.track_data['track_number']):
-            audio_file['track_number'] = variables.track_data['track_number']
+            audio_file['tracknumber'] = variables.track_data['track_number']
 
 
     def add_album(self, variables, artist_dir, album):
