@@ -16,14 +16,8 @@ class Pics:
         try:
             album_cover_image_url = album_object.get_cover_image()
             utils.save_image(album_cover_image_url, album_image_path)
-        except pylast.WSError as e:
-            if str(e) == 'Album not found':
-                print '[-] '+ str(variables.album_name) + "'s thumbnail not found"
-            else:
-                print '[-]pylast Exception ' + str(e)
-            return
         except Exception as e:
-            print "[-] Unknown Exception while fetching album thumbnail: " + str(e)
+            print "[-] Exception while fetching %s's thumbnail:%s"%(variables.album_name,e.message)
             return
         print '[+] Added ' + variables.album_name + ' thumbnail'
 
@@ -38,14 +32,8 @@ class Pics:
         # Note the size argument which returns the url for a smaller image
         try:
             utils.save_image(artist_object.get_cover_image(size=2), artist_thumbnail_path)
-        except pylast.WSError as e:
-            if str(e) == 'Artist not found':
-                print '[-] '+ str(variables.band_name) + "'s thumbnail not found"
-            else:
-                print '[-]pylast Exception ' + str(e)
-            return
         except Exception as e:
-            print "[-] Exception while fetching artist thumbnail: " + str(e)
+            print "[-] Exception while fetching %s's thumbnail: %s"%(variables.band_name,e.message)
             return
         print '[+] Added ' + variables.band_name + ' thumbnail'
 
@@ -66,7 +54,7 @@ class Pics:
             try:
                 uuid = xml_tree.find('a:entry', ns).find('a:id', ns).text[9:]
             except Exception as e:
-                print 'Caught exception in cover pic ' + str(e)
+                self.get_band_cover_from_lastfm(variables)
                 return
 
             response = requests.get(zune_root + '/' + uuid + '/images')
@@ -80,8 +68,23 @@ class Pics:
                 url = instance.find('zune:url', ns).text
                 break
             if not url:
-                print "[-] %s's cover not found"%(variables.band_name)
+                self.get_band_cover_from_lastfm(variables)
                 return
             utils.save_image(url, artist_cover_path)
             print '[+] Added ' + variables.band_name + ' cover'
+
+    def get_band_cover_from_lastfm(self, variables):
+        print 'Cover pic not found in Zune, trying to fetch from lastfm'
+        artist_object = variables.network.get_artist(variables.band_name)
+        artist_id = str(variables.band_id)
+        # Save the artist thumbnails
+        artist_cover_path = os.path.join(variables.dirs.artists_cover, artist_id)+'.jpg'
+        # Note the size argument which returns the url for a smaller image
+        try:
+            utils.save_image(artist_object.get_cover_image(), artist_cover_path)
+        except Exception as e:
+            print "[-] Exception while fetching %s's cover pic: %s"%(variables.band_name,e.message)
+            return
+        print "[+] Added %s's cover"%(variables.band_name)
+
 pics = Pics()
