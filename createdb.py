@@ -20,8 +20,8 @@ engine = create_engine('{backend}://{user}:{password}@{host}/{name}'.format(back
 if __name__ == '__main__':
     # create db if it doesn't exist
     if database_exists(engine.url):
-        print 'Dropping and recreating database'
-        drop_database(engine.url)
+        print 'Database already exists.'
+        exit()
     try:
         create_database(engine.url)
         Base.metadata.create_all(engine)
