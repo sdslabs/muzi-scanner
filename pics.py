@@ -74,7 +74,7 @@ class Pics:
             print '[+] Added ' + variables.band_name + ' cover'
 
     def get_band_cover_from_lastfm(self, variables):
-        print 'Cover pic not found in Zune, trying to fetch from lastfm'
+        print ' [+] Cover pic not found in Zune, trying to fetch from lastfm'
         artist_object = variables.network.get_artist(variables.band_name)
         artist_id = str(variables.band_id)
         # Save the artist thumbnails
