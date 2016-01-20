@@ -53,8 +53,7 @@ Scanner Usage Examples
 ```sh
 $ python scan.py PATH/to/songs/root/ ~/artist_cover_image_directory/ ~/artist_thumbnail_directory/ ~/albums_thumb_image_directory/
 ```
-To fix missing images use the option ```--fix-missing```
-
+To fix missing thumbnails/coverpics:
 ```sh
 $ python fixmissing.py ~/artist_cover_image_directory/ ~/artist_thumbnail_directory/ ~/albums_thumb_image_directory/
 ```
