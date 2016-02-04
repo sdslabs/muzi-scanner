@@ -29,6 +29,7 @@ class Utils:
                     instance = model(**params)
                     session.add(instance)
                     session.commit()
+		    session.refresh(instance)
 
                     return instance, True
                 except IntegrityError as e:
