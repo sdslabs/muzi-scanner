@@ -1,9 +1,10 @@
 __author__ = 'gautham'
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, func, UniqueConstraint
+from sqlalchemy import Column, Integer, String,Text, ForeignKey, Float, DateTime, func, UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.schema import ForeignKeyConstraint
+import datetime
 
 Base = declarative_base()
 
@@ -14,7 +15,8 @@ class Band(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     language = Column(String(255))
-    info = Column(String(100000))
+    info = Column(Text())
+
 
 class Year(Base):
     __tablename__ = 'years'
@@ -34,7 +36,7 @@ class Album(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255))
     language = Column(String(255))
-    info = Column(String(100000))
+    info = Column(Text())
     band_id = Column(Integer)#, ForeignKey('bands.id'))
     band_name = Column(String(255))#, ForeignKey('bands.name'))
 
@@ -54,13 +56,13 @@ class Track(Base):
     album_id = Column(Integer, ForeignKey('albums.id'))
     band_id = Column(Integer, ForeignKey('bands.id'))
     genre_id = Column(Integer, ForeignKey('genres.id'))
-    artist = Column(String(100))
+    artist = Column(String(255))
     # track number
     track = Column(Integer)
     plays = Column(Integer, default=0)
     year_id = Column(Integer)
     length = Column(Integer)
-    creation_time = Column(DateTime, default=func.unix_timestamp(func.now()))
+    creation_time = Column(DateTime, default=datetime.datetime.utcnow)
 
 
     album = relationship('Album', backref=backref('tracks'))
