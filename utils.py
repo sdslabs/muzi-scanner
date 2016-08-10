@@ -141,11 +141,11 @@ class Variables:
                     (key is "band_name" and self.band_name != value):
                 self.track_data[key] = value
                 if key is "album_name":
-                    self.is_album_new = utils.check_if_album_exists(self,
+                    self.is_album_new = not utils.check_if_album_exists(self,
                                                         name = value,
                                                         band_name = self.tag_data['band_name'])[0]
                 elif key is "band_name":
-                    self.is_band_new = utils.check_if_band_exists(self,
+                    self.is_band_new = not utils.check_if_band_exists(self,
                                                         name = value)[0]
 
             elif (value is None and not self.track_data.has_key(key)) or\

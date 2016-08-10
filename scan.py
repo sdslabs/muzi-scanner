@@ -13,6 +13,10 @@ from schema import Track, Album, Band, Year, Genre
 from utils import utils, Variables
 from pics import pics
 
+# Set UTF-8 encoding as default
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
 class Scanner:
     def add_track(self, variables, audio_file_path):
         filename_in_database = os.path.relpath(audio_file_path, variables.dirs.base_dir)
