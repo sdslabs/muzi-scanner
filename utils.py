@@ -29,7 +29,7 @@ class Utils:
                     instance = model(**params)
                     session.add(instance)
                     session.commit()
-		    session.refresh(instance)
+                    session.refresh(instance)
 
                     return instance, True
                 except IntegrityError as e:
@@ -110,7 +110,7 @@ class Dirs:
 
 
 class Variables:
-    def __init__(self, arguments, session, network):
+    def __init__(self, arguments, session, network, top_genres):
         self.dirs = Dirs(arguments)
         self.arguments = arguments
         self.session = session
@@ -118,11 +118,18 @@ class Variables:
         self.track_data = {'year':2000,'track_number':'0','track_duration':240,'genre':'unknown'}
         self.tag_data = {'song_title':None,'band_name':None,'album':None,'year':None,'track_duration':None,
                          'track_number':None,'genre':None}
+        self.top_genres = top_genres
 
     def add_band(self, band_name, is_new, band_id = None):
         self.band_id = band_id
         self.is_band_new = is_new
         self.band_name = band_name
+
+    def update_band_status(self, is_new, band_id = None):
+        # This method is being made to prevent overwriting of
+        # band names
+        self.is_band_new = is_new
+        self.band_id = band_id
 
     def add_album(self, album_name, is_new, album_id = None):
         self.album_id = album_id
@@ -134,19 +141,28 @@ class Variables:
             # This case is when value from lastfm is None, we don't want to put that in
             # track_data dictionary
             if (key is "band_name" and self.band_name is not None and value is None) or\
-                (key is "album_name" and self.album_name is not None and value is None):
+                (key is "album_name" and self.album_name is not None and value is None and\
+                         (self.track_data.has_key("album_name") and self.track_data["album_name"] is None)):
                 self.track_data[key] = getattr(self, key)
             # This case is when a different album/band song is inside the same album directory
-            elif (key is "album_name" and self.album_name != value) or\
-                    (key is "band_name" and self.band_name != value):
+            elif (key is "album_name" and self.album_name != value and value) or\
+                    (key is "band_name" and self.band_name != value and value):
                 self.track_data[key] = value
                 if key is "album_name":
-                    self.is_album_new = not utils.check_if_album_exists(self,
+                    instance_exists, instance_id = utils.check_if_album_exists(self,
                                                         name = value,
-                                                        band_name = self.tag_data['band_name'])[0]
+                                                        band_name = self.tag_data['band_name'])
+                    self.is_album_new = not instance_exists
+                    if self.is_album_new is False:
+                        self.add_album(value, self.is_album_new, instance_id)
+
                 elif key is "band_name":
-                    self.is_band_new = not utils.check_if_band_exists(self,
-                                                        name = value)[0]
+                    instance_exists, instance_id = utils.check_if_band_exists(self,
+                                                        name = value)
+                    self.is_band_new = not instance_exists
+                    if self.is_band_new is False:
+                        # Don't update self.band_name because its the directory's name
+                        self.update_band_status(self.is_band_new, instance_id)
 
             elif (value is None and not self.track_data.has_key(key)) or\
                     (value is not None and self.track_data.has_key(key) and

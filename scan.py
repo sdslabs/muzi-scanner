@@ -2,6 +2,7 @@ import os
 import sys
 import pylast
 import glob
+import time
 import credentials
 from mutagen import easymp4
 from mutagen import mp3
@@ -33,7 +34,7 @@ class Scanner:
             track_object = variables.network.get_track(variables.track_data['band_name'],
                                                        variables.track_data['song_title'])
 
-            self.get_track_data_from_lastfm(variables)
+            self.get_track_data_from_lastfm(variables, track_object)
 
             if variables.is_band_new:
                 try:
@@ -47,9 +48,8 @@ class Scanner:
                                         language='English',
                                         info=variables.track_data['band_info'])
 
-                    variables.add_band(variables.track_data['band_name'],
-                                       False,
-                                       band_instance.id)
+                    variables.update_band_status(False,
+                                        band_instance.id)
 
                     session.close()
 
@@ -155,13 +155,16 @@ class Scanner:
                                    artist = variables.track_data['band_name'],
                                    year_id = year_instance.id,
                                    length = variables.track_data['track_duration'],
-                                   track = variables.track_data['track_number'])
+                                   track = variables.track_data['track_number'],
+                                   creation_time = int(time.time()),
+                                   status_add = 1)
         session.close()
         album_name = variables.track_data['album_name']\
             if variables.track_data.has_key('album_name') else variables.album_name
-        print '[+] %s - %s (%s) added' % (variables.track_data['band_name'],
+        print '[+] %s - %s (%s) (%s) added' % (variables.track_data['band_name'],
                                           variables.track_data['song_title'],
-                                          album_name)
+                                          album_name,
+                                          variables.track_data['genre'])
 
         self.update_tag_data(variables, audio_file_path)
 
@@ -179,20 +182,43 @@ class Scanner:
             return None
         return track_duration if track_duration is not 0 else None
 
-    def get_track_genre_from_lastfm(self, track_object):
+    def get_track_genres_from_lastfm(self, variables, track_object):
         try:
-            genre = track_object.get_top_tags(limit=1)[0].item.name
+            genres = [tag.item.name for tag in track_object.get_top_tags()]
+            # If no Track genres are found, then get top genres of the album
+            if not genres and track_object.get_album() is not None:
+                genres = [tag.item.name for tag in track_object.get_album().get_top_tags()]
+            # If still no genres are found, then get top genres of the artist
+            if not genres and track_object.get_artist() is not None:
+                genres = [tag.item.name for tag in track_object.get_artist().get_top_tags()]
+            # If still no genres are found, then get top genres of artist of directory name
+            if not genres:
+                genres = [tag.item.name for tag in variables.network.get_artist(variables.band_name).get_top_tags()]
         except:
             return None
-        return genre
+        return genres
 
-    def get_track_data_from_lastfm(self, variables):
+    def get_track_data_from_lastfm(self, variables, track_object):
 
-        track_duration = self.get_track_duration_from_lastfm(variables)
-        track_genre = self.get_track_genre_from_lastfm(variables)
+        track_duration = self.get_track_duration_from_lastfm(track_object)
+        track_genres = self.get_track_genres_from_lastfm(variables, track_object)
 
-        keys = ['track_duration','genre']
-        values = [track_duration,track_genre]
+        # The track tags returned from LastFM may be mixed up. So we compare them with
+        # top tags(already stored in variables.top_genres) and store the most popular genre
+        if track_genres:
+            # If nothing matches, we assign the most popular genre associated with
+            # this track in LastFM
+            track_genre = track_genres[0]
+
+            for genre in track_genres:
+                if genre in variables.top_genres:
+                    track_genre = genre
+                    break
+        else:
+            track_genre = None
+
+        keys = ['track_duration', 'genre']
+        values = [track_duration, track_genre]
 
         variables.store_track_data(keys, values)
 
@@ -516,10 +542,15 @@ class Scanner:
         network = pylast.LastFMNetwork(api_key=API_KEY,
                                        api_secret=API_SECRET,)
 
-        variables = Variables(arguments, Session, network)
+        top_genres = map(lambda tag_obj: tag_obj.item.name, network.get_top_tags())
+
+        variables = Variables(arguments, Session, network, top_genres)
 
         #TODO: evaluate listdir for artists_dir lazily
         for artist in os.listdir(variables.dirs.artists):
+            # Ignore hidden files
+            if artist.startswith('.'):
+                continue
             print '[+]>>>> Adding ' + artist
             self.add_band(variables, artist)
 
