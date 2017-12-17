@@ -5,9 +5,9 @@ The songs can be of either mp3 or mp4 or m4a format.
 
 Songs are placed in a hierarchical directory structure inside the songs root directory as follows: 
 
-- Artist Name > AlbumName > SongName
+- Music-Root > Language -> Artist Name > AlbumName > SongName
 
-So, a song "Problem" by Ariana Grande will be in the folder as "Arian Grande > My Everything > Problem.mp3" with rest of "My Everything" album's songs in it. 
+So, a song "Problem" by Ariana Grande will be in the folder as "Music-Root > English -> Arian Grande > My Everything > Problem.mp3" with rest of "My Everything" album's songs in it. 
 
 
 ## Prerequisites
@@ -17,6 +17,7 @@ Install following prerequisites:
 - `apt-get install libmysqlclient-dev python-dev python-setuptools`
 
 ## Libraries used:
+
 Specified in [requirements.txt]
 
 ```sh
@@ -40,9 +41,11 @@ Create a data.json file in the project root. It should look something like below
     }
 }
 ```
+
 ## Usage
 
-###Note:
+### Note:
+
 The below command is for development purpose only
 
 ```sh
@@ -51,8 +54,17 @@ $ python createdb.py
 
 Scanner Usage Examples
 ```sh
-$ python scan.py PATH/to/songs/root/ ~/artist_cover_image_directory/ ~/artist_thumbnail_directory/ ~/albums_thumb_image_directory/
+$ python scan.py PATH/to/artists/root/ ~/artist_cover_image_directory/ ~/artist_thumbnail_directory/ ~/albums_thumb_image_directory/
 ```
+
+* Here the PATH/to/artists/root represents the directory where the artists directory are kept and not the music root that is either English or Hindi directory like `/home/fristonio/SDSLabs/music/English` and not `/home/fristonio/SDSLabs/music/`
+
+Example : 
+
+```sh
+python scan.py /home/fristonio/SDSLabs/music/English /home/fristonio/SDSLabs/muzi_extras/cdn/band_cover /home/fristonio/SDSLabs/muzi_extras/cdn/band_thumbnail /home/fristonio/SDSLabs/muzi_extras/cdn/album_thumbnail
+```
+
 To fix missing thumbnails/coverpics:
 ```sh
 $ python fixmissing.py ~/artist_cover_image_directory/ ~/artist_thumbnail_directory/ ~/albums_thumb_image_directory/
