@@ -3,6 +3,7 @@ import sys
 import pylast
 import glob
 import credentials
+import cgi
 from mutagen import easymp4
 from mutagen import mp3
 from sqlalchemy.orm import sessionmaker
@@ -188,11 +189,11 @@ class Scanner:
 
     def get_track_data_from_lastfm(self, variables):
 
-        track_duration = self.get_track_duration_from_lastfm(variables)
-        track_genre = self.get_track_genre_from_lastfm(variables)
+        track_duration=self.get_track_duration_from_lastfm(variables)
+        track_genre=self.get_track_genre_from_lastfm(variables)
 
-        keys = ['track_duration','genre']
-        values = [track_duration,track_genre]
+        keys = ['track_duration', 'genre']
+        values = [track_duration, track_genre]
 
         variables.store_track_data(keys, values)
 
@@ -205,7 +206,8 @@ class Scanner:
 
     def get_band_info_from_lastfm(self, artist_object):
         try:
-            band_info = artist_object.get_bio_summary()
+            # The html of info breaks the json format when not escaped
+            band_info = cgi.escape(artist_object.get_bio_summary(), quotes=True)
         except:
             return None
         return band_info
@@ -219,7 +221,7 @@ class Scanner:
 
     def get_album_info_from_lastfm(self, album_object):
         try:
-            album_info = album_object.get_wiki_content()
+            album_info = cgi.escape(album_object.get_wiki_content(), quotes=True)
         except:
             return None
         return album_info
@@ -320,6 +322,8 @@ class Scanner:
         song_title = self.get_song_title_from_tag(audio_file)
 
         band_name = self.get_band_name_from_tag(audio_file)
+        # In apollo band_name is stored as bands appended by ,
+        band_name = band_name.split(", ")[0]
 
         album_name = self.get_album_name_from_tag(audio_file)
 
@@ -438,7 +442,6 @@ class Scanner:
         if old_tag != int(variables.track_data['track_number']):
             audio_file['tracknumber'] = variables.track_data['track_number']
 
-
     def add_album(self, variables, artist_dir, album):
         new, album_id = utils.check_if_album_exists(variables, album, variables.band_name)
         new = not new
@@ -457,7 +460,6 @@ class Scanner:
 
         for audio_file_path in songs_path:
             self.add_track(variables, audio_file_path)
-
 
     def add_band(self, variables, artist):
         artist_dir = os.path.join(variables.dirs.artists, artist)
@@ -482,7 +484,6 @@ class Scanner:
             print '[+] Adding ' + album
             self.add_album(variables, artist_dir, album)
 
-
     def __init__(self, arguments):
 
         # Configure Session class with desired options
@@ -496,14 +497,15 @@ class Scanner:
         db_backend = credentials.get_db_backend()
 
         # Later, we create the engine
-        engine = create_engine('{backend}://{user}:{password}@{host}/{name}?charset=utf8'
-                                .format(backend=db_backend,
-                                        user=db_user_name,
-                                        password=db_password,
-                                        host=db_host,
-                                        name=db_name),
-                                        # echo=True
-                                        )
+        engine = create_engine(
+            '{backend}://{user}:{password}@{host}/{name}?charset=utf8'.format(
+                backend=db_backend,
+                user=db_user_name,
+                password=db_password,
+                host=db_host,
+                name=db_name
+            ),
+        )
 
         # Associate it with our custom Session class
         Session.configure(bind=engine)
@@ -523,10 +525,15 @@ class Scanner:
             print '[+]>>>> Adding ' + artist
             self.add_band(variables, artist)
 
-if __name__ == '__main__':
 
-    arguments = {'artists_dir': sys.argv[1], 'artist_cover_dir': sys.argv[2],
-                 'artist_thumbnail_dir': sys.argv[3], 'album_thumbnail_dir': sys.argv[4]}
+if __name__ == "__main__":
+
+    arguments = {
+        'artists_dir': sys.argv[1],
+        'artist_cover_dir': sys.argv[2],
+        'artist_thumbnail_dir': sys.argv[3],
+        'album_thumbnail_dir': sys.argv[4]
+    }
 
     # Run
     Scanner(arguments)

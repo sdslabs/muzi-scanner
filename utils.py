@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.expression import ClauseElement
 from schema import Track, Album, Band, Year, Genre
 
+
 class Utils:
     def save_image(self, url, path):
         """
@@ -29,8 +30,7 @@ class Utils:
                     instance = model(**params)
                     session.add(instance)
                     session.commit()
-		    session.refresh(instance)
-
+                    session.refresh(instance)
                     return instance, True
                 except IntegrityError as e:
                     # We have failed to add track, rollback current session and continue
@@ -100,7 +100,6 @@ class Dirs:
 
         # Convert the path to absolute path
         self.artists = os.path.abspath(artists)
-
         # Base dir should be where both English and Hindi songs are present
         self.base_dir = os.path.abspath(artists + '/..')
 
@@ -115,9 +114,9 @@ class Variables:
         self.arguments = arguments
         self.session = session
         self.network = network
-        self.track_data = {'year':2000,'track_number':'0','track_duration':240,'genre':'unknown'}
-        self.tag_data = {'song_title':None,'band_name':None,'album':None,'year':None,'track_duration':None,
-                         'track_number':None,'genre':None}
+        self.track_data = {'year': 2000, 'track_number': '0', 'track_duration': 240, 'genre': 'unknown'}
+        self.tag_data = {'song_title': None, 'band_name': None, 'album': None, 'year': None, 'track_duration': None,
+                         'track_number': None, 'genre': None}
 
     def add_band(self, band_name, is_new, band_id = None):
         self.band_id = band_id
@@ -130,7 +129,7 @@ class Variables:
         self.album_name = album_name
 
     def store_track_data(self, keys, values):
-        for key,value in zip(keys,values):
+        for key, value in zip(keys,values):
             # This case is when value from lastfm is None, we don't want to put that in
             # track_data dictionary
             if (key is "band_name" and self.band_name is not None and value is None) or\
@@ -154,13 +153,14 @@ class Variables:
                 self.track_data[key] = value
 
     def store_tag_data(self, keys, values):
-        for key,value in zip(keys,values):
+        for key, value in zip(keys,values):
             if (value is not None):
                 self.tag_data[key] = value
 
     def reset_track_data(self):
-        self.tag_data = {'song_title':None,'band_name':None,'album':None,'year':None,'track_duration':None,
-                         'track_number':None,'genre':None}
-        self.track_data = {'year':2000,'track_number':'0','track_duration':240,'genre':'unknown'}
+        self.track_data = {'year': 2000, 'track_number': '0', 'track_duration': 240, 'genre': 'unknown'}
+        self.tag_data = {'song_title': None, 'band_name': None, 'album': None, 'year': None, 'track_duration': None,
+                         'track_number': None, 'genre': None}
+
 
 utils = Utils()

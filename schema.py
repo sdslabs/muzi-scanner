@@ -62,7 +62,8 @@ class Track(Base):
     plays = Column(Integer, default=0)
     year_id = Column(Integer)
     length = Column(Integer)
-    creation_time = Column(DateTime, default=datetime.datetime.utcnow)
+    # Current timestamp
+    creation_time = Column(DateTime, default=func.unix_timestamp(func.now()))
 
 
     album = relationship('Album', backref=backref('tracks'))
